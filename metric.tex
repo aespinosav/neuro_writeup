@@ -1,0 +1,175 @@
+\documentclass[10pt,a4paper]{book}
+\usepackage[latin1]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\begin{document}
+\chapter{Spike train metrics}
+
+\section{Similarities and differences of spike trains}
+
+Our general aim, in broad, terms is to study how well neurons encode information as spike trains. We want to know how efficient the neural code is in representing the stimuli a neuron is presented with. In terms of sensory neurons, this corresponds to stimuli from the real world.
+
+In order to be able to approach this issue we first need to be able to quantify the differences between pairs of spike trains. The idea is that spike trains evoked from a stimulus will be similar to each other, but different from spike trains that correspond to other stimuli.
+
+One way to do this is to define a metric for spike trains. That is, a function that tells us the \emph{distance} between two spike trains. Therefore spike trains that are similar can be thought of as being close together.
+
+There are a variety of ways to characterise how similar two spike trains are, ranging from just counting how many spikes are in each train, binning the spikes and counting spikes per bin as well as how many coincident spikes exist \cite{kistler97}, the edit length metric (or Victor--Purpura metric) \cite{victor_purpura}, to the van Rossum metric \cite{vanRossum} (which is a kernel based metric) which we will explain here and use in the remainder of this report.
+
+A detailed comparison between edit length metrics and kernel based metrics can be found in \cite{houghton_victor10}.
+
+What we want all these methods to capture (which they do to various degrees of success) is the important features of the spike trains. While it can be argued what these features are, since different neurons encode stimuli in different ways, the two most notable features are the times at which the spikes happen (which encompasses the amount of spikes) and the arrival rate of the spikes, which generally varies at different positions throughout the spike train.
+
+Since we will be using a metric for spike trains, it is worth mentioning the properties a metric $d$ must have, for a given metric space $\mathcal{X}$, for all $x, y, z \in \mathcal{X}$:
+\begin{itemize}
+\item It must be non-negative. $d(x,y) \geq 0$.
+\item It must be symmetric. $d(x,y) = d(y,x)$.
+\item $d(x, y) = 0$, if and only if $x = y$.
+\item It has to satisfy the triangle inequality. $d(x,z) \geq d(x,y) + d(y,z)$.
+\end{itemize}
+
+These properties highlight the fact that if we have a metric we must be working in a metric space. In the following section we will discuss the structure of the space of spike trains and why it is cumbersome to try to define a metric in this space. We will also explain how spike trains can be mapped into a vector space with a metric.
+
+\section{Mapping spike trains into function space}
+
+The way we are thinking of spike trains is as (euclidian) vector-like objects whose elements are the times at which the neuron in question spiked.
+
+The main issue, is that spike trains need not contain the same number of spikes. So if we have two identical spike trains except for one extra spike in one of them, while qualitatively similar, if we consider them vectors, they are radically different, they would belong to vector spaces of different dimensionality.
+
+Another problem is that it can be hard to tell which spikes are equivalent between two trains. Consider the following two spike trains,
+\begin{align}
+\mathbf{u} &= (0, 0.3, 0.5) \nonumber \\
+\mathbf{v} &= (0, 0.5, 0.6).
+\end{align}
+It is not clear which spike from $\mathbf{u}$, spike $v_2$ is equivalent to. Is it equivalent to $u_2$ and got delayed? Or is it equivalent to $u_3$ as its timing suggests? These are issues that the different ways of comparing spike trains mentioned in the previous section deal with in different ways. Some consider coincident spikes to be equivalent, while some do not (for example only dealing with spike counts).
+
+This last issue is a problem that arises with the ordered structure of the spike train. If we were dealing with a euclidian vector space, one can change the basis with no side effects, but in dealing with spike trains, assigning a spike time with a basis vector would imply a (possibly non-existent) relationship between spikes that are assigned to the same basis vector.
+
+One would like to keep the vector-like qualities of the spike trains but without having to keep the difficulties that arise when dealing with coordinates. One elegant solution to this problem is to map the spike trains into a non-coordinate vector space, such as the vector space of real functions.
+
+The spike trains will be mapped to functions of time,
+\begin{equation}
+\mathbf{u} \mapsto f(t;\mathbf{u}).
+\end{equation}
+
+%one can argue that there are bases in function space. fourier series etc...
+
+The way to do this is by filtering the spike train with a kernel. For the van Rossum metric the kernel is exponential,
+\begin{equation}
+h(t) = \left\{
+\begin{matrix}
+0, & t < 0 \\
+\dfrac{1}{\tau} e^{-t/\tau}, & t \ge 0,
+\end{matrix}
+\right.
+\end{equation}
+but in principle any kernel might be used.
+
+The way to proceed is to think of the spike train as a series of Dirac $\delta$ functions at every spike time, we can define an intermediate function $g$,
+\begin{equation}
+g(t;\mathbf{u}) = \sum_{i=1}^{m} \delta(t - u_i),
+\end{equation}
+where $m$ is the number of spikes in the spike train $\mathbf{u}$.
+
+To apply the filter, we must do the convolution of $g(t;\mathbf{u})$ with the kernel of choice $h(t)$,
+\begin{align}
+f(t;\mathbf{u}) & = g(t;\mathbf{u})\star h(t) \nonumber \\
+& = \sum_{i=1}^{m}\int_{0}^{T} \delta(t - u_i)h(t)dt \nonumber \\
+& = \sum_{i=1}^{m}h(t - u_i).
+\end{align}
+
+%Add diagrams of what the spike train functions look like.
+
+\section{Analytic derivation of the van Rossum metric}
+
+Once the spike trains have been kernelised via the map,
+\begin{equation}
+\mathbf{u} \mapsto f(t;\mathbf{u}) = \sum_{i=1}^{m}h(t - u_i),
+\end{equation}
+the metric on the spike train space is induced by the $L^2$ metric,
+\begin{equation} \label{eq:spike_metric}
+d(\mathbf{u}, \mathbf{v}) = \sqrt{\int dt \left[f(t; \mathbf{u}) - f(t;\mathbf{v}) \right]^2}
+\end{equation}.
+
+We will derive an analytic expression for when the exponential kernel is used,
+\begin{equation}
+h(t) = \left\{
+\begin{matrix}
+0, & t < 0 \\
+\dfrac{1}{\tau} e^{-t/\tau}, & t \ge 0
+\end{matrix}
+\right.
+\end{equation}
+
+Before we continue we will rewrite $h(t)$ using the Heaviside step function $\Theta$ to avoid having to deal with the piecewise definition. The Heaviside function is defined as,
+\begin{equation}
+\Theta(x) = 
+\left\lbrace
+\begin{matrix}
+0\, & x \leq 0 \\
+1\, & x > 0.
+\end{matrix}
+\right.
+\end{equation}
+
+We can now write the exponential kernel as,
+\begin{equation}
+h(t)= \dfrac{1}{\tau}\Theta(t)e^{-t/\tau}.
+\end{equation}
+It might look that expressing a piecewise defined function in terms of another one does not gain us anything, however since we will be integrating we can take advantage of the definition of the Heaviside function to easily choose integration limits that will simplify our expressions.
+
+In order to carry out the integration expressed in equation \ref{eq:spike_metric} we will first expand the integrand $\left[f(t; \mathbf{u}) - f(t;\mathbf{v}) \right]^2$.
+\begin{equation}
+\left[f(t; \mathbf{u}) - f(t;\mathbf{v}) \right]^2 = f^2(t; \mathbf{u}) + f^2(t; \mathbf{v}) - 2f(t; \mathbf{u})f(t; \mathbf{v}).
+\end{equation}
+
+
+
+
+We will treat the squared terms first, and since they are equivalent but for different spike trains we only have to do it once,
+\begin{align}
+f^2(t; \mathbf{u}) %&= \left( \sum_{i=1}^{m} h(t -u_i)\right)^2 \\
+&= \left( \sum_{i=1}^{m}\dfrac{1}{\tau}\Theta(t - u_i)e^{-(t u_i)/\tau} \right)^2 \nonumber \\
+%&= \dfrac{1}{\tau^2}  \left( \sum_{i=1}^{m} \Theta(t - u_i)e^{-(t - u_i)/\tau} \right) \left( \sum_{j=1}^{m} \Theta(t - u_j)e^{-(t - u_j)/\tau} \right) \\
+&= \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{m} \Theta(t - u_i)  \Theta(t - u_j) \exp(-(2t -u_i -u_j)/\tau)
+\end{align} 
+
+To integrate this term we want to order the sums so we can choose nice integration limits. So we can wirte the previous expression as,
+\begin{equation}
+\dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} \Theta(t - u_i)  \Theta(t - u_j) \exp(-(2t -u_i -u_j)/\tau),
+\end{equation}
+this way we guarantee that $u_i \ge u_j$ in each sub-term.
+
+We now integrate this expression,
+\begin{align}
+&\dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} \int_{0}^{\infty} \Theta(t - u_i)  \Theta(t - u_j) \exp(-(2t -u_i -u_j)/\tau) 
+\nonumber \\
+%& = \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} \int_{u_i}^{\infty} \exp(-(2t -u_i -u_j)/\tau) \\
+& = \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} \int_{u_i}^{\infty} \exp(-2t/\tau) \exp( u_i + u_j/\tau) \nonumber  \\
+%& = \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} -\dfrac{\tau}{2} \exp( u_i + u_j/\tau) \left[\exp(-2t/\tau)\right]_{u_i}^{\infty}  \\
+%& = \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} -\dfrac{\tau}{2} \exp( u_i + u_j/\tau) \left[ - \exp(-2u_i/\tau)\right]  \\
+%& = \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} \dfrac{\tau}{2} \exp( u_i + u_j/\tau) \exp(-2u_i/\tau) \\
+& = \dfrac{1}{\tau^2} \sum_{i=1}^{m}\sum_{j=1}^{i} \dfrac{\tau}{2} \exp( -(u_i - u_j)/\tau) \nonumber \\
+%& = \dfrac{1}{2\tau} \sum_{i=1}^{m}\sum_{j=1}^{i} \exp( -|u_i - u_j|/\tau)\\
+& = \dfrac{1}{2\tau} \sum_{i=1}^{m}\sum_{j=1}^{m} \exp( -|u_i - u_j|/\tau).
+\end{align}
+By using the absolute value in the last expression for the exponential, we are eliminating the need for explicitly ordering the $u_i$'s and $u_j$'s.
+
+The second term is completely equivalent to this, but for spike train $\mathbf{v}$; and by using the absolute value in the exponential, we can effortlessly write down the last term:
+\begin{equation}
+\dfrac{1}{2\tau} \sum_{i=1}^{m}\sum_{j=1}^{n} \exp( -|u_i - v_j|/\tau).
+\end{equation}
+The main thing to be aware of is that each of the terms has a different number of sub-terms in the sums, the first one has $m^2$, the second $n^2$ and finally the third one has $m\times n$.
+
+The final expression for the metric, when using the exponential kernel is,
+\begin{align}
+d(\mathbf{u}, \mathbf{v}) = & \dfrac{1}{\sqrt{2\tau}}  \left\lbrace \sum_{i=1}^{m}\sum_{j=1}^{m} \exp( -|u_i - u_j|/\tau) \,+ \right. \nonumber \\ 
+& \left. \sum_{i=1}^{n}\sum_{j=1}^{n} \exp( -|u_i - u_j|/\tau) - 2\sum_{i=1}^{m}\sum_{j=1}^{n} \exp( -|u_i - v_j|/\tau) \right\rbrace ^{1/2}
+\end{align}
+
+
+
+\end{document}

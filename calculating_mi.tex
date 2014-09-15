@@ -1,0 +1,260 @@
+\documentclass[10pt,a4paper]{book}
+\usepackage[latin1]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\begin{document}
+\chapter{Mutual information between stimulus and response}
+
+In this chapter we will explain in detail the two methods for estimating the mutual information that we will be comparing. The discrete method, used in \cite{deRuyter97}, consists on binning the spikes and assigning binary values to the bins according to whether a spike was present or not. These values are taken as letters to form words in the information theoretic sense, the spike trains are therefore represented as sequences of words. The kernel density estimation method, presented in \cite{houghton13} takes a different approach, and treats the responses as a continuous random variable.
+
+Both methods seek to calculate the mutual information between the stimulus presented and the response of the neurons in the form of spike trains. As we have mentioned before, in order to do this we must interpret both the stimuli and responses as random variables. The main difference between them is that the discrete method treats the responses as a discrete random variable, whereas the KDE method considers it a continuous one.
+
+In both cases the stimulus presented is considered a discrete random variable. This is fine for the way the data is processed and analysed since we can choose intervals of the whole stimulus and treat each interval as an individual entity. However, natural stimuli do not occur in this way. So both the methods are over simplifying the stimulus space. In \cite{bialek91} and \cite{deRuyter97} they claim that the behavioural reaction time of the flies to stimuli is of the order of $30$ms, in this case if we want to treat the stimulus space as discrete it would have to be the set of all possible $30$ms sequences of angular velocities, if we only take continuous functions that set still has the same cardinality as the real numbers. Of course the physiology of the neurons prevents them from being able to encode that many stimuli, but in terms of dealing with stimuli in a information theoretic way, it is clear that there are issues to be resolved.
+
+We will not address these issues here, however it is important to understand the limitations of these approaches.
+
+\section{Discrete method}
+
+The \emph{standard} method of measuring mutual information between stimuli and spike train response in sensory neurons consists of discretising the spike train into binary code, a notable and one of the first uses of this approach can be seen in \cite{deRuyter97}.
+
+The way in which the spike trains are discretised is the following, a time window of length $T$ is chosen along with a \emph{precision} $\Delta \tau$. The spike train is then partitioned into non-overlapping intervals of time of length $T$. Each of these windows is then subdivided into $k$ bins of length $\Delta \tau$ (therefore, $k = \dfrac{T}{\Delta \tau}$).
+
+The spike train is now digitised according to whether there is a spike in one of the bins or not. In this way, the neuron's response is encoded in $k$-letter words of length $T$. 
+
+Figure \ref{fig:discrete_example} shows how this discretisation is carried out, we show how the first 10-letter word ($k = 10$) is constructed from the spiking time data.
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.4]{discretisation_example_plot}
+\caption{Example of how spike trains are translated into binary code. The points correspond to the times at when the neuron spikes, each line is a response to the same stimulus. We show how the first 10-letter word is constructed for 5 trials of the same stimulus. The vertical lines show the bins (for precision $\Delta \tau = 0.003\,\text{s}$), if a spike occurs in the bin then a $1$ is assigned as a \emph{letter} otherwise a $0$ is assigned.}
+\label{fig:discrete_example}
+\end{center}
+\end{figure}
+
+We can now construct probability distribution from these words and as a result we are now able to calculate information theoretic quantities such as entropy and mutual information between the stimulus and the resulting spike train evoked by the stimulus.
+
+The mutual information between the responses and the stimuli is given by,
+\begin{equation}
+I(R;S) = H(R) - H(R|S).
+\end{equation}
+%
+To calculate $I(R;S)$ we need the entropy of the responses, $H(R)$ and the entropy of the responses \emph{conditioned} on the stimuli, $H(R|S)$. A conceptual shift of what we consider the stimuli and the response is required. Instead of considering the whole 5s sequence of the moving pattern as a single stimulus we now consider the stimuli to be the windows of length $T$ for which we construct the words. The responses are now the encoded $k$-letter words that correspond to each of these time windows.
+
+As briefly summarised in section \ref{sec:information_theory}, the entropy of a random variable is given by,
+\begin{equation}
+H(R) = - \sum_{r \in R} p(r)\log_2 p(r),
+\end{equation}
+where $r$ are the responses and $p(r)$ the probability of occurrence or response $r$. These probabilities are reconstructed from the frequency of each specific word in response to a certain \emph{type} of stimulus. In \cite{deRuter97} they reconstruct these probabilities by discretising the spike train evoked by a 9000s stimulus of their pattern moving randomly on the screen.
+
+So the estimate $\tilde{p}(r)$ for $p(r)$ is that is used is,
+\begin{equation}
+\tilde{p}(r) = \dfrac{f(r)}{|R|},
+\end{equation}
+where $f(r)$ is the frequency of the word $r$ and $|R|$ is the number of different words observed.
+
+However the way to obtain the distribution of words from the stimulus has a certain subjectivity attached, since the total number of words observed depends on the data used. For instance one could use the aggregate word counts over all the trials done with the 5s stimulus, or simply do the entropy calculation for each trial and average over the trials. So care must be taken in order to obtain the most meaningful value of the entropy. We will discuss this in further detail later.
+
+The conditional entropy is given by,
+\begin{equation}
+H(R|S) =  - \sum_{s \in S} p(s) \sum_{r \in R} p(r|s) \log_2 p(r|s).
+\end{equation}
+
+For the data we are using which is from an experiment of the type carried out in \cite{deRuyter97}, the expression simplifies further as each stimulus is presented the same number of times: once per trial. So if we write the expression as,
+\begin{equation}
+H(R|S) = \left\langle \sum_{r \in R} p(r|s)\log_2 p(r|s) \right\rangle_{S},
+\end{equation}
+the way to calculate this quantity from the data becomes clearer.
+
+The expression above dictates the procedure to follow, for each stimulus, corresponding to an interval of $T \text{s}$, we estimate the conditional probability distribution from the frequency of words, when we only consider words that correspond to that time window.
+
+Figure \ref{fig:s_noise_calculation} shows how these distributions are constructed for each time window of length $T$. The averaging procedure in this case is simply taking the arithmetic mean of $\sum_{r \in R} p(r|s)\log_2 p(r|s)$ for all time windows.
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.6]{s_noise_distribution_diagram}
+\caption{How to select sets of words to construct the estimates for the conditional probability $p(r|s)$. The $r_{ij}$'s are the $k$-letter words and the $s_i$'s represent intervals of the original stimulus of length $T$. In this case the grey region highlights the words corresponding to the third time window, which we can now consider the third stimulus. This way $p(r|s)$ can be estimated by the frequency of the words per stimulus. For example, for stimulus $s_3$ the set of words that form the distribution are $\{r_{i3}: i=1,\dots, N\}$ where N is the number of trials.}
+\label{fig:s_noise_calculation}
+\end{center}
+\end{figure}
+
+\subsection{limitations}
+\begin{itemize}
+\item Binning problem, same as histograms
+\item Resolution/parameter choice (biologically reasonable choices, but still ad hoc)
+\item frequentist/naive framework in estimators.
+\end{itemize}
+
+\section{Kernel density estimation method}
+\subsection{Setting up the problem}
+
+An alternative method that avoids discretising the spike trains into letters and words consists on using kernel density estimation methods to obtain an estimate of the joint probability distribution of stimuli and responses. In this section we will explain the method from \cite{Houghton13} as it applies to the data at hand.
+
+We will be more precise in how we treat stimuli and responses in this section since the procedure is elaborate and there are subtleties involved.
+
+We will consider the stimuli with which the neurons are presented to be drawn from a discrete space $\mathcal{S}$. In our case these stimuli will be time windows of the repeated $5\text{s}$ sequence of angular velocities. The exposure of the neuron to the stimulus results in a response in the form of a spike train. We will call the space of responses $\mathcal{R}$. 
+
+These spike trains can be expressed in a vector--like object that contains the times at which spikes occurred. However, as is discussed further in section \ref{sec:spike_train_space}, the spike times cannot be interpreted as coordinates since the spike trains can be composed of different numbers of spikes. So the mathematical objects we are constructing to represent them do not belong to a coordinate space, furthermore, the space to which these objects belong to is continuous since the spiking times take values in the real numbers.
+
+All is not lost, however, since the space $\mathcal{R}$ can be given a metric (as discussed in \ref{sec:metrics}) and as we will show, a statistical measure can also be assigned.
+
+The problem of calculating the mutual information between stimuli and responses is being able to calculate the mutual information between a discrete random variable and one that takes values in a continuous space. The stimulus $S$ takes values in the discrete space $\mathcal{S}$ and the response (spike train) $R$ takes values in $\mathcal{R}$. The mutual information is therefore expressed as,
+\begin{equation}
+I(R;S) = \sum_{s \in \mathcal{S}} \int_{\mathcal{R}} p(r,s)\log_2\dfrac{p(r,s)}{p(r)p(s)} dr.
+\end{equation}
+However, due to the strange structure of $\mathcal{R}$, evaluating this integral is not so straight forward.
+
+The first problem one runs into is that to be able to integrate over $\mathcal{R}$ a measure on the space is needed, but since it is not a coordinate space it is not immediately clear what this measure should be. As mentioned above, one solution is to use a statistical measure. Since we are treating $R$ as a random variable (as a necessity, due to how Shannon's theory of information is framed) the probability density distribution of $R$ on $\mathcal{R}$ naturally induces a statistical measure on the space. The volume of a region $\mathcal{D} \subset \mathcal{R}$ can be identified with $P(x\in \mathcal{D})$.
+
+This statistical measure is the one that will be used to carry out the integration, but we must express the mutual information in different terms in order to be able to do so.
+
+Using Bayes' theorem we can express the mutual information as,
+\begin{equation} \label{eq:mi_bayes}
+I(R;S) = \sum_{s \in \mathcal{S}} \int_{\mathcal{R}} p(r,s) \log_2 \dfrac{p(r|s)}{p(r)}dr.
+\end{equation}
+%
+To carry out the change of measure we first observe that what we want is,
+\begin{align}
+\text{vol}(\mathcal{D})& = \int_{\mathcal{D}} p(r) dr \nonumber \\
+& = \int_{\mathcal{D}} d\beta ,
+\end{align}
+where $d\beta$ is our new measure. From this we have,
+\begin{equation} \label{eq:measure}
+d\beta = p(r)dr.
+\end{equation}
+
+The probability density under the new measure is given by,
+\begin{equation}
+p_{\beta}(r) = \dfrac{p(r)}{J(r)},
+\end{equation}
+where $J(r)$ is the Jacobian of the transformation that changes the measure evaluated at $r$. In our case $J(r) = d\beta / dr$, which gives us (from \ref{eq:measure}),
+\begin{align}
+p_{\beta}(r) & = \dfrac{p(r)}{d\beta / dr} \nonumber \\
+& = 1.
+\end{align}
+
+It may seem strange that by changing the measure the probability of all responses seems to be uniform, however, this is introduced by the scaling factor $d\beta/dr$. The effect is the following: since the volume of a region is determined by the probability that a response drawn at random from all of $\mathcal{R}$ belongs to $\mathcal{D}$, a region that encloses more points will naturally have a larger volume. We must remember that since $p_{\beta}$ is a probability density function the actual value of $p_{beta}(r)$ is not that meaningful in terms of how probable it is to draw a specific $r$, meaningful values are given by considering intervals. If the space was one-dimensional and continuous, $[r -\epsilon, r + \epsilon]$, would be a meaningful interval, but the fact that we are dealing with a non-coordinate space, that we can only probe through the data means these \emph{intervals} or regions can only be specified as collections of points.
+
+We can now simplify expression \ref{eq:mi_bayes} further by using the change of measure,
+\begin{equation}
+I(R;S) = \sum_{s \in \mathcal{S}} \int_{\mathcal{R}} p_{\beta}(r,s)\log_2p_{\beta}(r|s)d\beta.
+\end{equation}
+
+We are now faced with another problem, while we can restrict the corpus of stimuli by experimental design, the only way to probe $\mathcal{R}$ is with what we obtain as responses to the stimuli, including our measure. In a sense this makes exact results impossible, but we can make further progress by using estimates.
+
+Expressing the mutual information as an expectation of $\log_2p_{\beta}(r|s)$ allows us to write a Monte-Carlo estimate for the mutual information from experimental data as,
+\begin{equation}
+I(R;S) \approx \dfrac{1}{n_r} \sum_i \log_2 p_{\beta}(r_i|s_i),
+\end{equation}
+where $n_r$ is the total number of responses obtained from experiment, and the sum is over the set of outcomes $\{ (r_i, s_i) \}$ obtained from the data.
+
+The expression to solve has now been greatly simplified, but this still leaves us with the problem of estimating $p_{\beta} (r_i | s_i)$. This is where kernel density estimation comes in, albeit, in a not very straightforward way. Before we proceed to explain the way KDE will be used we will manipulate this expression further.
+
+We can express the conditional probability,
+\begin{align} \label{eq:p_beta_joint}
+p(r_i|s_i) & = \dfrac{p_{\beta}(r_i, s_i)}{p_{\beta}(s_i)} \nonumber \\
+& = \dfrac{p_{\beta}(r_i, s_i)}{1/n_s} \nonumber \\
+& = n_s p_{\beta}(r_i, s_i)
+\end{align}
+the second step is possible since we are in control of the corpus of stimuli and the relative frequency at which they are presented, and of course, the change of measure only affects the responses.
+
+\subsection{Kernel density estimation (KDE)}
+
+To estimate an $n$-dimensional probability distribution from a sample of $m$ points, the basic procedure is to choose a kernel function k($\mathbf{x}$) and filter the data with the kernel,
+\begin{equation}
+\tilde{p}(\mathbf{x}) = \dfrac{1}{m}\sum_{i = 1}^{m} k(\mathbf{x} - \mathbf{x}_i).
+\end{equation}
+What this procedure does, is sum $m$ copies of the kernel function, one centred at each data point $\mathbf{x}_i$. The previous expression, however, is restricted to when the distribution is over an $n$-dimensional vector space. In our case we will use the same principle, however it needs to be generalised to a non--coordinate space.
+
+Changing the notation for the kernel slightly what we want to do is,
+\begin{equation}
+\tilde{p}(x) = \dfrac{1}{m}\sum_{i = 1}^{m} k(x, x_i),
+\end{equation}
+where we have dropped the boldface to highlight the fact that these are not elements of a coordinate space and the new notation for the kernel, $k(x;x_i)$, means we are adding the kernel centred at the point $x_i$.
+
+As is done in \cite{Houghton13}, we will also use the square kernel,
+\begin{equation}
+k(x;y) = 
+\left\{
+\begin{matrix}
+1/hV\,, & d(x, y) < h\\
+0\,, & \text{otherwise}
+\end{matrix}
+\right.
+\end{equation}
+where $V$ is a constant and the bandwidth $h$ corresponds to the amount of smoothing. $d(x;y)$ is the metric measuring the distance between the points $x$ and $y$.
+
+The kernel must satisfy an important, which will define the value of $V$. Since the kernel can be thought of as a probability density on its own it must satisfy,
+\begin{equation}
+\int_{\text{supp}[k(r)]} k(r^{\prime}, r) d\beta = 1,
+\end{equation}
+where $\text{supp}[k(r)]$ is the support of the kernel, that is the region over which it has a non-zero value.
+
+We will be using a square kernel in combination with the kernel-based spike train metric and the measure we have defined previously.
+
+The effect of the statistical measure we have adopted on the kernel is reflected on its support. Therefore determining the bandwidth will define the measure (or \emph{volume}) of the support. Furthermore, since the measure is determined by the quantity of data points, specifying a bandwidth restricts the kernel to be defined on a \emph{fixed number} of neighbouring points. In conjunction with the way we have defined the square kernel, the bandwidth also determines the value that the kernel takes through the product $hV$.
+
+All this results in a kernel with a peculiar form, for which we will use the following notation,
+\begin{equation}
+k_{h}(r, r_i;n_h) = 
+\left\{
+\begin{matrix}
+\dfrac{1}{n_h}\,, & \text{$r$ is one of the $n_h$ nearest points to $r_i$} \\
+0\,, &\text{otherwise}
+\end{matrix}
+\right.
+\end{equation}
+where $n_h$ is $\lfloor hn_r \rfloor$. Whether $r_i$ is one of the $n_h$ closest points to $r$ is determined by the the metric chosen for $\mathcal{R}$. The kernel basically counts how many neighbourhoods $r_i$ belongs to, these neighbourhoods can be defined as the support sets of the kernels being used. In other words, the higher the probability means that $r_i$ is closer to more points than some other response. Figure \ref{fig:neighbourhood} shows how these neighbourhoods are assigned.
+
+\begin{figure}[b]
+\begin{center}
+\includegraphics[scale=0.6]{neighbourhood_of_r}
+\caption{a) schematic representation of responses to two different stimuli, blue and red, in spike train space. b) Shows the same responses (as empty circles) and in colour the responses for which $r_1$ is one of the 5 nearest neighbours (corresponds to $n_h = 6$). It is clear how a single response can be part of more neighbourhoods than $n_h$.}
+\label{fig:neighbourhood}
+\end{center}
+\end{figure}
+
+Since we we will be dealing with a known amount of data ($n_r$), we can specify the bandwidth indirectly, and more intuitively, by explicitly stating the number of nearest neighbours, $n_h$ to be considered.
+
+%We will use this kernel to estimate the joint probability $p_{\beta}(r_i, s_i)$,
+%\begin{align}
+%\tilde{p}_{\beta}(r_i, s_i) & =  p_{\beta}(r_i) \cdot p_{\beta}(s_i | r_i)  \nonumber \\
+%& = \sum_{i=1}^{n_r} k(r,r_i; n_h),
+%\end{align}
+%it is worth to note that the index $i$ runs over the 
+
+Using the KDE results in the following estimate for the joint probability distribution,
+\begin{equation}
+\tilde{p}_{\beta}(r_i, s_i) = \dfrac{c(r_i, s_i; n_h)}{n_h},
+\end{equation}
+where $c(r_i, s_i; n_h)$ is the number of data points that are responses to stimulus $s_i$ for which $r_i$ is is one of the neighbours. That is, the number of responses to the same stimuli as $r_i$, for which $r_i$ is in the support of the kernel centred at those points.
+
+Substituting this back into equation \ref{eq:p_beta_joint}, we obtain the KDE estimate for the mutual information as presented in \cite{Houghton13},
+\begin{equation}
+I(R;S) \approx \dfrac{1}{n_r} \sum_{i=1}^{n_r} \log \dfrac{n_s c(r_i, s_i; n_h)}{n_h}.
+\end{equation}
+%
+For $r_1$ in figure \ref{fig:neighbourhood} b), $c(r_1, s_1;5) = 5$ since it is one of the 5 nearest neighbours to 4 other responses from the same stimulus (red). It adds up to 5 since the point $r_1$ itself is counted as well, this prevents the logarithm from diverging to $-\infty$.
+
+In \cite{Houghton13} the definition of $c(r_i, s_i; n_h)$ is slightly different, as it is considering neighbours in one dimension, however both definitions give similar values and behave the same way in the extreme cases we will now explain.
+
+The idea is that the optimal outcome is for responses to the same stimulus to be clustered close to each other and sufficiently far away from the responses to other stimuli, we will consider this case first. If all the responses for each stimulus are clustered sufficiently close together, then each response only belongs to neighbourhoods of spike trains that originate from the same stimulus. In this case, as long as $n_h \leq n_t$ no response $r$ will be an $n_h$ nearest neighbour to a response from a different stimulus. If we take $n_h = n_t$, then $c(r_i, s_i; n_h) = n_t$ for all $r$, since $r$ is one of the $n_t$ nearest neighbours of every other response in its cluster. Therefore the estimate of the mutual information reduces to,
+\begin{align}
+I(R,S;n_h) & = \dfrac{1}{n_r} \sum_{i = 1}^{n_r}	\log \dfrac{n_s n_t}{n_t} \nonumber \\
+& = \log n_s.
+\end{align}
+Which is the maximum possible value that the mutual information can have, where every response uniquely identifies the stimulus that produced it.
+
+The opposite case is when the distribution of the responses to every stimulus is the same, we can think of them as being completely mixed. If we consider the responses to be uniformly distributed, which is not necessarily the case but helps with the intuition, the amount of neighbourhoods a point belongs to is roughly $n_h$, since points near each other have roughly the same separation to their neighbours. Furthermore, the probability that a given neighbour belongs to the same stimulus is $1/n_s$ so,
+\begin{equation}
+c(r_i, s_i; n_h) \approx \dfrac{n_h}{n_s}.
+\end{equation}
+This means that the estimate for the mutual information vanishes. This is exactly what we would expect in this case, since the responses are providing no information about which stimulus they came from.
+
+
+
+
+\end{document}

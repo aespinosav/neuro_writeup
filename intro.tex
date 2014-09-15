@@ -1,0 +1,110 @@
+\documentclass[10pt,a4paper]{book}
+\usepackage[latin1]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\begin{document}
+\chapter{Introduction}
+%Basic introduction, introductory paragraph, brain, neurons, spikes and spike trains, complexity etc...
+
+%Aim of project (explicitly stated)
+
+
+\section{Experimental data}% describe the experimental data we will work with...
+
+In order to compare the performance of these two methods with each other we will be applying them to data provided by Professor R. de Ruyter van Steveninck which was obtained from an experiment similar to the one described in \cite{Nemenman08}.
+
+The experiment consists of recording the extracellular potential from H1, a neuron in the visual system of a fly, that is sensitive to horizontal motion. The way the experiment is carried out is by placing an immobilised fly on a step motor that will rotate with a given angular velocity profile. The activity of H1 is recorded as the neuron responds to the stimulus (the horizontal motion).
+
+
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[scale=0.45]{stimulus_segment}
+\caption{Segment of a segment of the stimulus presented to the fly. The angular velocity is the actual rotation velocity of the platform on which the fly is placed. It was sampled at $2ms$ intervals.}
+\end{center}
+\end{figure}
+
+The experiment is carried out outdoors in order for the neuron to react to stimuli that are as natural as possible. The angular velocity profile used is approximately Gaussian white noise.
+
+We will be using two sets of data, one is the response to a long non-repeating stimulus that lasts 990s. The other is the response to a 5s stimulus that is repeated 198 times.
+
+This experiment was designed to be processed using the discretising method for calculating mutual information, since it is possible to obtain very long recordings from a single neuron in a setting where the stimulus is completely under experimental control. Not all experimental data can be gathered in such a way, which makes applying the discretising method problematic, as it relies on a large data sample in order to give a good estimate of the mutual information \cite{some_bialek_paper}.
+
+The previous fact motivates, in part, the search for alternative methods of calculating the mutual information between the stimulus a neuron is presented with and its corresponding response.
+
+\section{Neural coding} %this should be short and to the point
+
+%action potential in neurons
+
+%sensory neurons
+
+%neural code
+
+\section{Information theory}
+
+%the language of information theory
+
+In order to use Information Theory to learn about the way in which neurons encode the stimuli which they respond to and communicate it to other neurons, the process of how this happens must be cast into the proper mathematical framework.
+
+In this section we briefly state the basic concepts of Information theory which are going to be used throughout this report and comment on the way the experimental data must be treated in order for the subsequent analysis to be useful.
+
+It is important to highlight the fact that Information Theory only tells us of the way information is transmitted, encoded and decoded, but is unable to shed any light into the actual content, or what that information means. 
+
+This is actually an advantage, in the sense that it provides us with a general framework in which spike trains from any neuron can be analysed without having to be context specific. Therefore the same methods can be used regardless of what the actual functions of the neurons in question are.
+
+%information =  log n
+
+%entropy
+For a discrete random variable $X$ ,that takes values from a set $\mathcal{X}$ with a probability $p(x) = \text{Pr}(X = x)$, its entropy $H(X)$ is defined as,
+\begin{equation}
+H(X) = - \sum_{x \in \mathcal{X}} p(x) \log p(x).
+\end{equation}
+The base of the logarithm is not critical, but is usually taken as 2, in this case the units of the entropy are bits.
+
+The entropy represents the uncertainty of the random variable. For example if a fair die is tossed, all the possible outcomes, $\mathcal{X} = \{1,2,3,4,5,6\}$, are equally likely (with probability $1/6$). Then the entropy will be high ($H(X)= 2.585 $) as there is a large uncertainty in the outcomes. However if the die is loaded and the outcome is almost always $1$ then the uncertainty will be low (and so would the entropy). If we take the probabilities to be $0.95$ for outcome $1$, and $0.01$ for all the others, then the entropy is $H(X) = 0.402$.
+
+In broad terms, the higher the entropy of a random variable, the harder it is to predict what the outcome will be.
+
+The natural extension of the definition of entropy for 2 random variables is through the joint probability distribution which gives us the joint entropy,
+\begin{equation}
+H(X,Y) = - \sum_{x in \mathcal{X}} \sum_{y \in \mathcal{Y}}p(x,y) \log p(x,y),
+\end{equation}
+for discrete random variables $X$, $Y$ that take values in $\mathcal{X}$, $\mathcal{Y}$ respectively.
+
+We can also define the conditional entropy of a random variable given another one,
+\begin{equation}
+H(Y|X) = - \sum_{x \in \mathcal{X}} \sum_{y \in \mathcal{Y}} p(x,y) \log p(y|x).
+\end{equation}
+The following relationship between the joint and conditional entropy of these random variables makes understanding what they tell us much easier,
+\begin{equation}
+H(X,Y) = H(X) + H(Y | X).
+\end{equation}
+The joint entropy quantifies the uncertainty of the pair of random variables taken together $X$, $Y$. But this last expression makes it clear that this can be composed from the entropy of $X$ alone and the conditional uncertainty of $Y$, given that of $X$.
+
+This motivates the idea of the mutual information between two random variables,
+\begin{equation}
+I(X;Y) = H(X) - H(X|Y).
+\end{equation}
+The mutual information is maximised if the conditional entropy vanishes. This happens when knowledge of $Y$ completely determines $X$, therefore reducing the conditional uncertainty to 0. The mutual information vanishes when $H(X|Y)= H(X)$, which happens when observing $Y$ and $X$ are completely independent. Therefore the mutual information tells us how much of the uncertainty of $X$ has been reduced by having observed $Y$.
+
+So far all this seems fairly removed from the actual question that we want to tackle: how good are neurons at encoding information?
+
+But if we think of the stimuli neurons receive and the spike trains they produce in response to them as random variables, quantities such as the mutual information start to make sense.
+
+We will think of both the Stimuli and the neural responses as discrete random variables $S$ and $R$ respectively. $S$ takes values from some set or \emph{alphabet} $\mathcal{S}$ and the response takes values from $\mathcal{R}$ which is the set of all possible spike trains that can be produced by a neuron. In the case of the stimuli, it is not so clear how they can be represented this way, but for now lets treat $S$ as a discrete random variable.
+
+The task of the brain is to obtain information from the outside world, $S$, and process it in some way. However, the  parts of the brain where this processing happens have no access to the actual stimuli, and can only use the values for $R$  which sensory neurons provide.
+
+So from this perspective we are dealing with a noisy communication channel just like the ones dealt abstractly in information-theoretic terms. This view also makes the entropy and mutual information between the stimuli and neural responses, $I(S;R)$, be meaningful quantities.
+
+Naturally, difficulties both conceptual and practical arise arise in trying to fit neural coding into these sort of terms, and the way we have described it here is overly simplified, since stimuli and spike trains are not just random variables. This project attempts to compare two methods of calculating information in spike trains, and while doing so we will expose some of these difficulties and subtleties.
+%in neuroscience: neural coding
+\section{Structure of the report}
+%Last thing to write!
+
+
+
+\end{document}
